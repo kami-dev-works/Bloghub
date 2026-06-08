@@ -1,0 +1,254 @@
+---
+const {
+  siteName = 'NewsHub',
+  sliderItems = [],
+  notification = null,
+  categories = [],
+  services = [],
+  blogs = [],
+  currentPage = 1,
+  totalPages = null,
+  currentCategory = 'all',
+  currentSort = '-createdAt',
+} = Astro.props;
+
+const categoryOptions = [
+  { value: 'all', label: 'All Categories' },
+  { value: 'technology', label: 'Technology' },
+  { value: 'business', label: 'Business' },
+  { value: 'sports', label: 'Sports' },
+  { value: 'entertainment', label: 'Entertainment' },
+  { value: 'health', label: 'Health' },
+  { value: 'science', label: 'Science' },
+  { value: 'world', label: 'World' },
+];
+
+const sortOptions = [
+  { value: '-createdAt', label: 'Newest First' },
+  { value: 'createdAt', label: 'Oldest First' },
+  { value: '-views', label: 'Most Views' },
+  { value: '-likes', label: 'Most Liked' },
+];
+
+const buildQuery = (overrides = {}) => {
+  const params = new URLSearchParams();
+  const cat = overrides.category ?? currentCategory;
+  const srt = overrides.sort ?? currentSort;
+  const pg = overrides.page ?? currentPage;
+  if (cat && cat !== 'all') params.set('category', cat);
+  if (srt && srt !== '-createdAt') params.set('sort', srt);
+  if (pg && pg > 1) params.set('page', String(pg));
+  const qs = params.toString();
+  return qs ? `/?${qs}` : '/';
+};
+
+const blogHref = (blog) => `/blog/${blog.slug || blog._id}`;
+const serviceHref = (svc) => `/service/${svc.slug || svc._id}`;
+const categoryHref = (cat) => `/services/category/${cat.value}`;
+
+const formatDate = (iso) => {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch {
+    return '';
+  }
+};
+
+const enText = notification?.text || '';
+const hiText = notification?.textHi || '';
+const hasNotification = enText || hiText;
+
+const prevHref = currentPage > 1 ? buildQuery({ page: currentPage - 1 }) : null;
+const nextHref = totalPages && currentPage < totalPages ? buildQuery({ page: currentPage + 1 }) : null;
+---
+
+<div class="ssr-seo-skeleton" aria-hidden="true">
+  {sliderItems.length > 0 && (
+    <section data-section="featured-slider" aria-label="Featured Highlights">
+      <h2>Featured Highlights</h2>
+      <ul>
+        {sliderItems.map((item) => {
+          const href = item.type === 'blog' && item.slug
+            ? `/blog/${item.slug}`
+            : item.type === 'service' && item.slug
+              ? `/service/${item.slug}`
+              : item.redirectLink || '#';
+          return (
+            <li>
+              <article>
+                <a href={href}>
+                  {item.image && <img src={item.image} alt={item.title || 'Featured'} loading="lazy" width="1200" height="630" />}
+                  {item.title && <h3>{item.title}</h3>}
+                  {item.description && <p>{item.description}</p>}
+                  {item.category && <span class="badge">{item.category}</span>}
+                  {item.createdAt && <time datetime={item.createdAt}>{formatDate(item.createdAt)}</time>}
+                </a>
+              </article>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  )}
+
+  {hasNotification && (
+    <aside data-section="notification" aria-label="Site Announcement">
+      <strong>Announcement:</strong>
+      {enText && <p lang="en">{enText}</p>}
+      {hiText && <p lang="hi">{hiText}</p>}
+    </aside>
+  )}
+
+  {categories.length > 0 && (
+    <nav data-section="categories" aria-label="Service Categories">
+      <h2>Browse Service Categories</h2>
+      <ul>
+        {categories.map((cat) => (
+          <li>
+            <a href={categoryHref(cat)} title={cat.name}>
+              {cat.icon && <img src={cat.icon} alt={`${cat.name} icon`} loading="lazy" width="110" height="110" />}
+              <span>{cat.name}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <a href="/service-categories" rel="next">View all categories</a>
+    </nav>
+  )}
+
+  {services.length > 0 && (
+    <section data-section="top-services" aria-label="Our Services">
+      <h2>Our Services</h2>
+      <ul>
+        {services.map((svc) => (
+          <li>
+            <article>
+              <a href={serviceHref(svc)}>
+                {svc.image && <img src={svc.image} alt={svc.title} loading="lazy" width="280" height="140" />}
+                <h3>{svc.title}</h3>
+                {svc.description && <p>{svc.description}</p>}
+                <span class="meta">
+                  {svc.category && <span class="badge">{svc.category}</span>}
+                  <span class="price">{svc.price > 0 ? `$${svc.price}` : 'Free'}</span>
+                  {typeof svc.rating === 'number' && <span class="rating">Rating: {svc.rating}/5</span>}
+                  {typeof svc.views === 'number' && <span class="views">{svc.views} views</span>}
+                </span>
+              </a>
+            </article>
+          </li>
+        ))}
+      </ul>
+      <a href="/services" rel="next">View all services</a>
+    </section>
+  )}
+
+  <div data-section="main-grid">
+    <aside data-section="sidebar-filters" aria-label="Filter and sort blogs">
+      <section>
+        <h2>Filter by Category</h2>
+        <ul>
+          {categoryOptions.map((opt) => (
+            <li>
+              <a
+                href={buildQuery({ category: opt.value, page: 1 })}
+                aria-current={currentCategory === opt.value ? 'page' : undefined}
+              >
+                {opt.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section>
+        <h2>Sort Blogs</h2>
+        <ul>
+          {sortOptions.map((opt) => (
+            <li>
+              <a
+                href={buildQuery({ sort: opt.value, page: 1 })}
+                aria-current={currentSort === opt.value ? 'page' : undefined}
+              >
+                {opt.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </aside>
+
+    <section data-section="blogs" aria-label="Latest Blogs">
+      <h1>
+        {currentCategory && currentCategory !== 'all'
+          ? `Latest ${currentCategory.charAt(0).toUpperCase() + currentCategory.slice(1)} Blogs`
+          : `Latest Blogs from ${siteName}`}
+        {currentPage > 1 && ` — Page ${currentPage}`}
+      </h1>
+
+      {blogs.length === 0 ? (
+        <p>No blogs found.</p>
+      ) : (
+        <ol start={(currentPage - 1) * 10 + 1}>
+          {blogs.map((blog) => (
+            <li>
+              <article>
+                <a href={blogHref(blog)}>
+                  {blog.image && (
+                    <img
+                      src={blog.image}
+                      alt={blog.title}
+                      loading="lazy"
+                      width="400"
+                      height="225"
+                    />
+                  )}
+                  <header>
+                    {blog.category && <span class="badge">{blog.category}</span>}
+                    {blog.isFeatured && <span class="badge badge-hot">HOT</span>}
+                    <h2>{blog.title}</h2>
+                  </header>
+                  {blog.description && <p>{blog.description}</p>}
+                  <footer class="meta">
+                    {blog.author?.username && (
+                      <span class="author">By {blog.author.username}</span>
+                    )}
+                    {blog.createdAt && (
+                      <time datetime={blog.createdAt}>{formatDate(blog.createdAt)}</time>
+                    )}
+                    {typeof blog.views === 'number' && <span>{blog.views} views</span>}
+                    {Array.isArray(blog.likes) && <span>{blog.likes.length} likes</span>}
+                    {Array.isArray(blog.comments) && <span>{blog.comments.length} comments</span>}
+                  </footer>
+                </a>
+              </article>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      {(prevHref || nextHref) && (
+        <nav data-section="pagination" aria-label="Pagination">
+          {prevHref && <a rel="prev" href={prevHref}>&larr; Previous page</a>}
+          <span>Page {currentPage}{totalPages ? ` of ${totalPages}` : ''}</span>
+          {nextHref && <a rel="next" href={nextHref}>Next page &rarr;</a>}
+        </nav>
+      )}
+    </section>
+  </div>
+</div>
+
+<style>
+  .ssr-seo-skeleton {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+    padding: 0;
+    margin: -1px;
+    pointer-events: none;
+  }
+</style>

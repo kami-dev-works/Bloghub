@@ -1,0 +1,184 @@
+---
+import FloatingActions from '../components/FloatingActions.jsx';
+
+const { 
+  title = 'NewsHub - Your Daily News Source',
+  description = 'Stay informed with the latest news from around the world. NewsHub brings you trending news, local updates, and top stories.',
+  image = '/og-image.jpg',
+  article = null,
+  siteName = 'NewsHub',
+  currentPage = null,
+  totalPages = null,
+  keywords = null,
+  locale = 'en_US',
+  alternateLocales = [],
+  collectionSchema = null
+} = Astro.props;
+
+const siteUrl = Astro.site || new URL('http://localhost:4321');
+const siteUrlStr = siteUrl.toString().replace(/\/$/, '');
+const page = currentPage ? parseInt(currentPage) : 1;
+const baseURL = new URL(Astro.url.pathname, siteUrl);
+const currentPageUrl = page > 1 ? new URL(`${Astro.url.pathname}?page=${page}`, siteUrl) : baseURL;
+const prevPageUrl = page > 2 ? new URL(`${Astro.url.pathname}?page=${page - 1}`, siteUrl) : baseURL;
+const nextPageUrl = totalPages && page < totalPages ? new URL(`${Astro.url.pathname}?page=${page + 1}`, siteUrl) : null;
+const defaultKeywords = 'news, breaking news, latest news, trending, technology, sports, business, entertainment';
+const metaKeywords = keywords || (article?.keywords?.length ? article.keywords.join(', ') : article?.tags?.join(', ') || defaultKeywords);
+const absImage = image.startsWith('http') ? image : `${siteUrlStr}${image}`;
+
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": siteName,
+  "url": siteUrlStr,
+  "logo": absImage,
+  "description": description,
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": `${siteUrlStr}/?search={search_term_string}`
+    },
+    "query-input": "required name=search_term_string"
+  }
+};
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": siteName,
+  "url": siteUrlStr,
+  "description": description,
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": `${siteUrlStr}/?search={search_term_string}`
+    },
+    "query-input": "required name=search_term_string"
+  }
+};
+
+const speakableSchema = article ? {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "speakable": {
+    "@type": "SpeakableSpecification",
+    "cssSelector": [".article-description", ".article-content p:first-of-type"]
+  },
+  "url": baseURL
+} : null;
+---
+
+<!DOCTYPE html>
+<html lang={locale === 'hi' ? 'hi' : 'en'}>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="generator" content={Astro.generator} />
+  <meta name="theme-color" content="#0D9488" />
+  
+  <!-- Primary Meta Tags -->
+  <title>{title}</title>
+  <meta name="title" content={title} />
+  <meta name="description" content={description} />
+  <meta name="keywords" content={metaKeywords} />
+  <link rel="canonical" href={currentPage ? currentPageUrl : baseURL} />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+  {currentPage && prevPageUrl && <link rel="prev" href={prevPageUrl} />}
+  {nextPageUrl && <link rel="next" href={nextPageUrl} />}
+
+  <!-- Hreflang -->
+  <link rel="alternate" hreflang="en" href={currentPage ? currentPageUrl : baseURL} />
+  <link rel="alternate" hreflang="hi" href={currentPage ? currentPageUrl : baseURL} />
+  <link rel="alternate" hreflang="x-default" href={currentPage ? currentPageUrl : baseURL} />
+  {alternateLocales.map(alt => (
+    <link rel="alternate" hreflang={alt.lang} href={alt.url} />
+  ))}
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content={article ? 'article' : 'website'} />
+  <meta property="og:url" content={currentPage ? currentPageUrl : baseURL} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={absImage} />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name" content={siteName} />
+  <meta property="og:locale" content={locale} />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content={currentPage ? currentPageUrl : baseURL} />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={absImage} />
+
+  {article?.updatedAt && <meta property="article:modified_time" content={article.updatedAt} />}
+
+  <!-- Organization Schema -->
+  <script type="application/ld+json" set:html={JSON.stringify(organizationSchema)} />
+
+  <!-- WebSite Schema -->
+  <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />
+
+  <!-- Speakable Schema (for AI assistants) -->
+  {speakableSchema && (
+    <script type="application/ld+json" set:html={JSON.stringify(speakableSchema)} />
+  )}
+
+  <!-- CollectionPage Schema for listing pages -->
+  {collectionSchema && (
+    <script type="application/ld+json" set:html={JSON.stringify(collectionSchema)} />
+  )}
+
+  <!-- Structured Data for Articles -->
+  {article && (
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "NewsArticle",
+      "headline": article.title,
+      "image": [article.image],
+      "datePublished": article.createdAt,
+      "dateModified": article.updatedAt || article.createdAt,
+      "author": [{
+        "@type": "Person",
+        "name": article.author?.username || 'Anonymous',
+        ...(article.author?.url ? { "url": article.author.url } : {}),
+        ...(article.author?.sameAs ? { "sameAs": article.author.sameAs } : {})
+      }],
+      "description": article.description,
+      "articleSection": article.category
+    })} />
+  )}
+
+  <!-- Sitemaps -->
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/rss+xml" title={`${siteName} RSS Feed`} href="/rss.xml" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Resource Hints -->
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+  <link rel="dns-prefetch" href="https://images.unsplash.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
+
+  <!-- Theme Script -->
+  <script is:inline>
+    const theme = localStorage.getItem('theme-mode') || 'light';
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
+  </script>
+</head>
+<body class="theme-transition">
+  <slot />
+  <FloatingActions client:only="react" />
+</body>
+</html>

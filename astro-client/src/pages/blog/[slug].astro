@@ -1,0 +1,97 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import '../../styles/global.css';
+import AppRoot from '../../components/AppRoot.jsx';
+
+const API_BASE = 'https://api.subhkarta.net';
+const { slug } = Astro.params;
+
+let blog = null;
+let siteName = 'NewsHub';
+
+try {
+  const settingsRes = await fetch(`${API_BASE}/api/website-settings`);
+  if (settingsRes.ok) {
+    const settings = await settingsRes.json();
+    if (settings?.siteName) siteName = settings.siteName;
+  }
+} catch (e) {}
+
+let title = `${siteName} - Blog`;
+let description = '';
+let image = '';
+let publishedDate = '';
+let authorName = '';
+let category = '';
+let tags = [];
+let keywords = '';
+
+if (slug) {
+  try {
+    const res = await fetch(`${API_BASE}/api/blogs/slug/${slug}`);
+    if (res.ok) {
+      blog = await res.json();
+      title = blog.metaTitle || blog.title;
+      description = blog.metaDescription || blog.description || '';
+      image = blog.ogImage || blog.image || '';
+      publishedDate = blog.createdAt || '';
+      authorName = blog.author?.username || '';
+      category = blog.category || '';
+      tags = blog.tags || [];
+      keywords = blog.keywords ? blog.keywords.join(', ') : (blog.tags || []).join(', ');
+    }
+  } catch (e) {
+    // API not available, fall back to client-side rendering
+  }
+}
+
+const metadata = blog ? JSON.stringify({
+  title: blog.title,
+  description: blog.metaDescription || blog.description,
+  image: blog.image,
+  createdAt: blog.createdAt,
+  updatedAt: blog.updatedAt,
+  author: blog.author,
+  category: blog.category,
+  tags: blog.tags,
+  seoTitles: blog.seoTitles,
+  content: blog.content,
+  views: blog.views,
+  likes: blog.likes,
+  rating: blog.rating,
+  ratingCount: blog.ratingCount,
+  shortId: blog.shortId,
+  slug: blog.slug,
+  _id: blog._id,
+  metaTitle: blog.metaTitle,
+  ogImage: blog.ogImage,
+  canonicalUrl: blog.canonicalUrl,
+  keywords: blog.keywords,
+  faq: blog.faq
+}) : 'null';
+---
+
+<MainLayout
+  title={`${title} | ${siteName}`}
+  description={description}
+  image={image}
+  keywords={keywords}
+  article={blog ? {
+    title: blog.title,
+    image: blog.image,
+    createdAt: blog.createdAt,
+    updatedAt: blog.updatedAt,
+    author: blog.author,
+    description: blog.metaDescription || blog.description,
+    category: blog.category,
+    keywords: blog.keywords,
+    tags: blog.tags
+  } : null}
+  siteName={siteName}
+>
+  <script set:html={`
+    window.__INITIAL_BLOG__ = ${metadata};
+  `} />
+
+  <div id="root"><AppRoot client:only="react" /></div>
+</MainLayout>

@@ -1,0 +1,57 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import '../styles/global.css';
+import AppRoot from '../components/AppRoot.jsx';
+
+const siteName = 'NewsHub';
+const path = Astro.url.pathname;
+
+const pageMeta = {
+  '/services': { title: 'Our Services', description: 'Explore our range of professional services.' },
+  '/top-services': { title: 'Top Services', description: 'Discover our highest-rated services.' },
+  '/top-blogs': { title: 'Top Blogs', description: 'Most popular and trending blog posts.' },
+  '/service-categories': { title: 'Service Categories', description: 'Browse services by category.' },
+  '/liked': { title: 'Liked Blogs', description: 'Blogs you have liked.' },
+  '/submit': { title: 'Submit Blog', description: 'Submit your own blog post for review.' },
+  '/settings': { title: 'Settings', description: 'Manage your account settings and preferences.' },
+  '/admin': { title: 'Admin Dashboard', description: 'Manage users, content, and analytics.' },
+  '/trp': { title: 'TRP Report', description: 'View trending blog ratings and performance.' },
+  '/about': { title: 'About Us', description: 'Learn more about our mission and team.' },
+  '/contact': { title: 'Contact Us', description: 'Get in touch with our team.' },
+  '/privacy': { title: 'Privacy Policy', description: 'Our privacy policy and data handling practices.' },
+  '/terms': { title: 'Terms of Service', description: 'Terms and conditions for using our platform.' },
+};
+
+const meta = pageMeta[path] || { title: `${siteName}`, description: '' };
+
+// Check if it's a category route
+const catMatch = path.match(/^\/services\/category\/(.+)$/);
+if (catMatch) {
+  meta.title = `${catMatch[1]} Services`;
+  meta.description = `Browse ${catMatch[1]} services.`;
+}
+
+const listingPages = ['/', '/services', '/top-services', '/top-blogs', '/service-categories'];
+const isListing = listingPages.includes(path) || catMatch;
+const collectionSchema = isListing ? {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": meta.title,
+  "description": meta.description,
+  "url": `${Astro.site || 'http://localhost:4321'}${path}`,
+  "mainEntity": {
+    "@type": "ItemList",
+    "name": meta.title,
+    "itemListElement": []
+  }
+} : null;
+---
+
+<MainLayout
+  title={`${meta.title} | ${siteName}`}
+  description={meta.description}
+  siteName={siteName}
+  collectionSchema={collectionSchema}
+>
+  <div id="root"><AppRoot client:only="react" /></div>
+</MainLayout>

@@ -1,0 +1,73 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import '../../styles/global.css';
+import AppRoot from '../../components/AppRoot.jsx';
+
+const API_BASE = 'https://api.subhkarta.net';
+const { slug } = Astro.params;
+
+let service = null;
+let siteName = 'NewsHub';
+
+try {
+  const settingsRes = await fetch(`${API_BASE}/api/website-settings`);
+  if (settingsRes.ok) {
+    const settings = await settingsRes.json();
+    if (settings?.siteName) siteName = settings.siteName;
+  }
+} catch (e) {}
+
+let title = `${siteName} - Service`;
+let description = '';
+let image = '';
+let keywords = '';
+
+if (slug) {
+  try {
+    const res = await fetch(`${API_BASE}/api/services/slug/${slug}`);
+    if (res.ok) {
+      service = await res.json();
+      title = service.metaTitle || service.title;
+      description = service.metaDescription || service.description || '';
+      image = service.ogImage || service.image || '';
+      keywords = service.keywords ? service.keywords.join(', ') : (service.tags || []).join(', ');
+    }
+  } catch (e) {}
+}
+
+const metadata = service ? JSON.stringify({
+  title: service.title,
+  description: service.metaDescription || service.description,
+  image: service.image,
+  price: service.price,
+  rating: service.rating,
+  ratingCount: service.ratingCount,
+  category: service.category,
+  tags: service.tags,
+  slug: service.slug,
+  _id: service._id,
+  content: service.content,
+  views: service.views,
+  likes: service.likes,
+  seoTitles: service.seoTitles,
+  metaTitle: service.metaTitle,
+  ogImage: service.ogImage,
+  canonicalUrl: service.canonicalUrl,
+  keywords: service.keywords,
+  faq: service.faq
+}) : 'null';
+---
+
+<MainLayout
+  title={`${title} | ${siteName}`}
+  description={description}
+  image={image}
+  keywords={keywords}
+  siteName={siteName}
+>
+  <script set:html={`
+    window.__INITIAL_SERVICE__ = ${metadata};
+  `} />
+
+  <div id="root"><AppRoot client:only="react" /></div>
+</MainLayout>

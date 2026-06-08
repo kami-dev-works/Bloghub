@@ -1,0 +1,121 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import HomeSeoBody from '../components/HomeSeoBody.astro';
+import AppRoot from '../components/AppRoot.jsx';
+import '../styles/global.css';
+
+const API_BASE = import.meta.env.API_URL || 'https://api.subhkarta.net';
+
+const currentPage = parseInt(Astro.url.searchParams.get('page') || '1', 10) || 1;
+const currentCategory = Astro.url.searchParams.get('category') || 'all';
+const currentSort = Astro.url.searchParams.get('sort') || '-createdAt';
+const PER_PAGE = 10;
+
+const blogQuery = new URLSearchParams({
+  page: String(currentPage),
+  limit: String(PER_PAGE),
+  sort: currentSort,
+});
+if (currentCategory && currentCategory !== 'all') {
+  blogQuery.set('category', currentCategory);
+}
+
+const safeJson = async (settled) => {
+  if (settled.status !== 'fulfilled') return null;
+  const res = settled.value;
+  if (!res || !res.ok) return null;
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+};
+
+const [
+  settingsResult,
+  sliderResult,
+  notifResult,
+  catsResult,
+  servicesResult,
+  blogsResult,
+  countResult,
+] = await Promise.allSettled([
+  fetch(`${API_BASE}/api/website-settings`),
+  fetch(`${API_BASE}/api/sliders`),
+  fetch(`${API_BASE}/api/notifications`),
+  fetch(`${API_BASE}/api/service-categories`),
+  fetch(`${API_BASE}/api/services/top?limit=20`),
+  fetch(`${API_BASE}/api/blogs?${blogQuery.toString()}`),
+  fetch(`${API_BASE}/api/blogs/count`),
+]);
+
+const settings = await safeJson(settingsResult);
+const sliderPayload = await safeJson(sliderResult);
+const notification = await safeJson(notifResult);
+const categoriesPayload = await safeJson(catsResult);
+const servicesPayload = await safeJson(servicesResult);
+const blogsPayload = await safeJson(blogsResult);
+const countPayload = await safeJson(countResult);
+
+const siteName = settings?.siteName || 'NewsHub';
+const siteDescription =
+  settings?.siteDescription ||
+  'Stay informed with the latest news from around the world. NewsHub brings you trending news, local updates, and top stories.';
+
+const sliderItems = Array.isArray(sliderPayload?.items) ? sliderPayload.items : [];
+const categories = Array.isArray(categoriesPayload) ? categoriesPayload : [];
+const topServices = Array.isArray(servicesPayload) ? servicesPayload : [];
+const blogs = Array.isArray(blogsPayload?.blogs) ? blogsPayload.blogs : [];
+const totalBlogPages =
+  blogsPayload?.pagination?.pages ||
+  (countPayload?.count != null ? Math.ceil(countPayload.count / PER_PAGE) : null);
+
+const siteUrl = Astro.site || new URL('http://localhost:4321');
+const siteUrlStr = siteUrl.toString().replace(/\/$/, '');
+
+const collectionSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: `${siteName} - Your Daily News Source`,
+  description: siteDescription,
+  url: `${siteUrlStr}/`,
+  mainEntity: {
+    '@type': 'ItemList',
+    name: 'Latest News',
+    numberOfItems: blogs.length,
+    itemListElement: blogs.map((blog, idx) => ({
+      '@type': 'ListItem',
+      position: (currentPage - 1) * PER_PAGE + idx + 1,
+      url: `${siteUrlStr}/blog/${blog.slug || blog._id}`,
+      name: blog.title,
+      ...(blog.image ? { image: blog.image } : {}),
+      ...(blog.description ? { description: blog.description } : {}),
+    })),
+  },
+};
+---
+
+<MainLayout
+  title={`${siteName} - Your Daily News Source`}
+  description={siteDescription}
+  siteName={siteName}
+  currentPage={currentPage > 1 ? currentPage : null}
+  totalPages={totalBlogPages}
+  collectionSchema={collectionSchema}
+>
+  <div id="root">
+    <HomeSeoBody
+      siteName={siteName}
+      sliderItems={sliderItems}
+      notification={notification}
+      categories={categories}
+      services={topServices}
+      blogs={blogs}
+      currentPage={currentPage}
+      totalPages={totalBlogPages}
+      currentCategory={currentCategory}
+      currentSort={currentSort}
+    />
+    <AppRoot client:only="react" />
+  </div>
+</MainLayout>
