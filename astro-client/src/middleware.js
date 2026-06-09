@@ -1,6 +1,6 @@
 import { defineMiddleware } from 'astro:middleware';
 
-const BACKEND_URL = (import.meta.env.BACKEND_URL || process.env.BACKEND_URL || 'https://api.subhkarta.net').replace(/\/$/, '');
+const BACKEND_URL = (import.meta.env.BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:5000').replace(/\/$/, '');
 
 const PROXY_PREFIXES = ['/api/', '/uploads/'];
 

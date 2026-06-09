@@ -1,6 +1,6 @@
 export async function GET() {
   const baseUrl = import.meta.env.SITE_URL || 'https://newshub.example.com';
-  const apiBase = import.meta.env.API_URL || 'https://api.subhkarta.net';
+  const apiBase = import.meta.env.API_URL || 'http://localhost:5000';
 
   let items = [];
 

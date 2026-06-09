@@ -19,7 +19,7 @@ import { sliderApi, uploadApi } from '../lib/api';
 import BlogImageUpload from './BlogImageUpload';
 import { useData } from '../stores/DataContext';
 import ImageCropper2 from './ImageCroper/ImageCropper2';
-const apiBase = import.meta.env.API_URL || 'https://api.subhkarta.net';
+const apiBase = import.meta.env.API_URL || 'http://localhost:5000';
 
 
 const SliderManager = () => {

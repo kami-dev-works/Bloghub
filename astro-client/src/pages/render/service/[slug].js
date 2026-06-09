@@ -1,6 +1,6 @@
 export async function GET({ params }) {
   const { slug } = params;
-  const API_BASE = import.meta.env.API_URL || 'https://api.subhkarta.net';
+  const API_BASE = import.meta.env.API_URL || 'http://localhost:5000';
 
   try {
     const res = await fetch(`${API_BASE}/api/services/slug/${encodeURIComponent(slug)}`);

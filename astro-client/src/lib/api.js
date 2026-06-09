@@ -1,5 +1,5 @@
 import axios from 'axios';
-  const apiBase = import.meta.env.API_URL || 'https://api.subhkarta.net';
+  const apiBase = import.meta.env.API_URL || 'http://localhost:5000';
 const getBaseURL = () => {
   if (typeof window !== 'undefined') {
     return '';
@@ -8,7 +8,7 @@ const getBaseURL = () => {
 };
 
 const api = axios.create({
-  baseURL: 'https://api.subhkarta.net/api',
+  baseURL: '/api',
   headers: {
     'Content-Type': 'application/json',
   },

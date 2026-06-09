@@ -4,7 +4,7 @@ import HomeSeoBody from '../components/HomeSeoBody.astro';
 import AppRoot from '../components/AppRoot.jsx';
 import '../styles/global.css';
 
-const API_BASE = import.meta.env.API_URL || 'https://api.subhkarta.net';
+const API_BASE = import.meta.env.API_URL || 'http://localhost:5000';
 
 const currentPage = parseInt(Astro.url.searchParams.get('page') || '1', 10) || 1;
 const currentCategory = Astro.url.searchParams.get('category') || 'all';

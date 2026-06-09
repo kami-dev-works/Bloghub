@@ -65,7 +65,7 @@ import SliderManager from './SliderManager';
 import WordLimitedTextField from './WordLimitedTextField';
 import { countWords } from '../lib/wordLimit';
 import ImageCropper2 from './ImageCroper/ImageCropper2';
-  const apiBase = import.meta.env.API_URL || 'https://api.subhkarta.net';
+  const apiBase = import.meta.env.API_URL || 'http://localhost:5000';
 const categories = [
   { value: 'politics', label: 'Politics' },
   { value: 'sports', label: 'Sports' },

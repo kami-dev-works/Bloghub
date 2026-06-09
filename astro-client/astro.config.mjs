@@ -29,11 +29,11 @@ export default defineConfig({
     server: {
       proxy: {
         '/api': {
-          target: 'https://api.subhkarta.net',
+          target: 'http://localhost:5000',
           changeOrigin: true,
         },
         '/uploads': {
-          target: 'https://api.subhkarta.net',
+          target: 'http://localhost:5000',
           changeOrigin: true,
         },
       },
