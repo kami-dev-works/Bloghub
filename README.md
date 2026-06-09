@@ -130,4 +130,4 @@ Open http://localhost:4321
 
 ## License
 
-MIT
+<!-- Add your chosen license here, or remove this section if none -->
